@@ -1,122 +1,74 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect, useCallback } from "react";
+import { socket } from "./socket";
+import LandingScreen from "./screens/LandingScreen";
+import LobbyScreen from "./screens/LobbyScreen";
+import GameScreen from "./screens/GameScreen";
+import ResultsScreen from "./screens/ResultsScreen";
+import "./index.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [screen, setScreen] = useState("landing");
+  const [room, setRoom] = useState(null);
+  const [myId, setMyId] = useState(null);
+  const [lastResult, setLastResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [finalLeaderboard, setFinalLeaderboard] = useState(null);
+
+  useEffect(() => {
+    socket.on("connect", () => setMyId(socket.id));
+
+    socket.on("room_update", (updatedRoom) => {
+      setRoom(updatedRoom);
+      setError(null);
+      if (updatedRoom.status === "lobby") setScreen("lobby");
+      if (updatedRoom.status === "submitting") { setLastResult(null); setScreen("game"); }
+      if (updatedRoom.status === "finished") setScreen("gameover");
+    });
+
+    socket.on("round_result", (result) => {
+      setLastResult(result);
+      setScreen("results");
+    });
+
+    socket.on("game_over", ({ leaderboard }) => {
+      setFinalLeaderboard(leaderboard);
+      setScreen("gameover");
+    });
+
+    socket.on("error", ({ message }) => {
+      setError(message);
+      setTimeout(() => setError(null), 4000);
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("room_update");
+      socket.off("round_result");
+      socket.off("game_over");
+      socket.off("error");
+    };
+  }, []);
+
+  const emit = useCallback((event, data) => socket.emit(event, data), []);
+  const isHost = room?.hostId === myId;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div>
+      {error && (
+        <div style={{
+          position: "fixed", top: "1rem", left: "50%", transform: "translateX(-50%)",
+          background: "rgba(192,57,43,0.95)", color: "#fff", padding: "0.6rem 1.5rem",
+          border: "1px solid #e74c3c", borderRadius: "2px", zIndex: 10000,
+          fontFamily: "var(--mono)", fontSize: "0.85rem", letterSpacing: "0.05em",
+        }}>
+          ⚠ {error}
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      )}
+      {screen === "landing"  && <LandingScreen emit={emit} myId={myId} />}
+      {screen === "lobby"    && <LobbyScreen room={room} emit={emit} myId={myId} isHost={isHost} />}
+      {screen === "game"     && <GameScreen room={room} emit={emit} myId={myId} isHost={isHost} />}
+      {screen === "results"  && <ResultsScreen room={room} result={lastResult} emit={emit} myId={myId} isHost={isHost} isFinal={false} />}
+      {screen === "gameover" && <ResultsScreen room={room} result={lastResult} emit={emit} myId={myId} isHost={isHost} isFinal={true} finalLeaderboard={finalLeaderboard || room?.roundHistory?.slice(-1)[0]?.leaderboard} />}
+    </div>
+  );
 }
-
-export default App
