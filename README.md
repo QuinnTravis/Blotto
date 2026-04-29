@@ -1,6 +1,6 @@
 # 🪖 Colonel Blotto
 
-A multiplayer game theory strategy game — built because I couldn't find a single playable version online.
+A multiplayer game theory strategy game, built because I couldn't find a single playable version online.
 
 ## The Story
 
@@ -17,21 +17,17 @@ In this version:
 - After each round, all distributions are revealed and matchups are calculated
 - Most **matchup wins** across all rounds = tournament winner
 
-The catch: there's no single dominant strategy. Stack all your troops on three fields and you dominate — until someone predicts you and counters. It's bluffing, game theory, and math all at once.
+The catch: there's no single dominant strategy. Stack all your troops on three fields and you dominate, until someone predicts you and counters. It's bluffing, game theory, and math all at once.
 
 ## Features
 
-- 🌐 **Real-time multiplayer** via WebSockets — create a room, share the code, play instantly
+- 🌐 **Real-time multiplayer** via WebSockets — create a room, share the code, play instantly ( To be Implemeneted )
 - 🤖 **AI bots** with three distinct strategies:
   - 🎲 **RandomBot** — pure random distribution
   - 💰 **GreedyBot** — concentrates troops on the minimum fields needed to win
   - 🧮 **NashBot** — approximates a Nash equilibrium using regret-matching
 - 📊 **Live leaderboard** updated after every round
 - 🎖️ **Full match history** — see every player's distribution after each round
-
-## How It's Played at Tournaments
-
-At quant and trading competitions, Blotto is used to test strategic reasoning under uncertainty. Players submit sealed allocations, matchups are resolved publicly, and everyone adjusts their strategy round by round. It rewards players who can model how others think — and punish predictability.
 
 ## Tech Stack
 
@@ -54,6 +50,4 @@ cd client && npm run dev
 ```
 
 Then open http://localhost:5173
-
-## Built For
 
