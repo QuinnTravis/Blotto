@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const TOTAL = 100;
 const FIELDS = 5;
@@ -7,12 +7,13 @@ const FIELD_NAMES = ["ALPHA", "BRAVO", "CHARLIE", "DELTA", "ECHO"];
 export default function GameScreen({ room, emit, myId, isHost }) {
   const [troops, setTroops] = useState(Array(FIELDS).fill(0));
   const [submitted, setSubmitted] = useState(false);
+  // Keep a snapshot of what we submitted so we can show it in the waiting screen
+  const submittedTroops = useRef(null);
 
   if (!room) return null;
 
   const remaining = TOTAL - troops.reduce((a, b) => a + b, 0);
   const isValid = remaining === 0;
-  const myPlayer = room.players.find(p => p.id === myId);
   const alreadySubmitted = room.players.find(p => p.id === myId)?.submitted;
   const submittedCount = room.players.filter(p => p.submitted).length;
 
@@ -29,13 +30,16 @@ export default function GameScreen({ room, emit, myId, isHost }) {
 
   function handleSubmit() {
     emit("submit", { code: room.code, distribution: troops });
+    submittedTroops.current = [...troops];
     setSubmitted(true);
   }
 
   function handleReset() {
     setTroops(Array(FIELDS).fill(0));
-    setSubmitted(false);
   }
+
+  const showWaiting = submitted || alreadySubmitted;
+  const displayTroops = submittedTroops.current || troops;
 
   return (
     <div className="screen">
@@ -53,18 +57,19 @@ export default function GameScreen({ room, emit, myId, isHost }) {
               DEPLOY YOUR TROOPS
             </div>
           </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: "var(--vt)", fontSize: "2.2rem", color: remaining === 0 ? "var(--green3)" : "var(--amber)" }}>
-              {remaining}
+          {!showWaiting && (
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: "var(--vt)", fontSize: "2.2rem", color: remaining === 0 ? "var(--green3)" : "var(--amber)" }}>
+                {remaining}
+              </div>
+              <div style={{ color: "var(--text3)", fontSize: "0.65rem", letterSpacing: "0.1em" }}>REMAINING</div>
             </div>
-            <div style={{ color: "var(--text3)", fontSize: "0.65rem", letterSpacing: "0.1em" }}>REMAINING</div>
-          </div>
+          )}
         </div>
 
         <hr className="divider" />
 
-        {/* Battlefield sliders */}
-        {!alreadySubmitted && !submitted ? (
+        {!showWaiting ? (
           <>
             {FIELD_NAMES.map((name, i) => (
               <div key={i} style={{ marginBottom: "1.2rem" }}>
@@ -116,15 +121,36 @@ export default function GameScreen({ room, emit, myId, isHost }) {
             )}
           </>
         ) : (
-          <div style={{ textAlign: "center", padding: "2rem 0" }}>
-            <div style={{ fontFamily: "var(--vt)", fontSize: "2rem", color: "var(--green3)", marginBottom: "0.5rem" }}>
-              ✓ TROOPS COMMITTED
+          <div style={{ padding: "1rem 0" }}>
+            <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+              <div style={{ fontFamily: "var(--vt)", fontSize: "2rem", color: "var(--green3)", marginBottom: "0.5rem" }}>
+                ✓ TROOPS COMMITTED
+              </div>
+              <div style={{ color: "var(--text3)", fontSize: "0.8rem" }}>
+                <span className="blink">▋</span> Waiting for other commanders... ({submittedCount}/{room.players.length})
+              </div>
             </div>
-            <div style={{ color: "var(--text2)", marginBottom: "1.5rem" }}>
-              Your distribution: [{troops.join(", ")}]
-            </div>
-            <div style={{ color: "var(--text3)", fontSize: "0.8rem" }}>
-              <span className="blink">▋</span> Waiting for other commanders... ({submittedCount}/{room.players.length})
+
+            {/* Show submitted distribution */}
+            <div style={{ marginBottom: "1rem" }}>
+              <label className="label">Your Deployment</label>
+              <div style={{ display: "flex", gap: "0.4rem" }}>
+                {FIELD_NAMES.map((name, i) => (
+                  <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ height: "50px", display: "flex", alignItems: "flex-end", justifyContent: "center", marginBottom: "0.3rem" }}>
+                      <div style={{
+                        width: "80%",
+                        height: `${Math.max((displayTroops[i] / TOTAL) * 100, displayTroops[i] > 0 ? 4 : 0)}%`,
+                        background: "linear-gradient(180deg, var(--green3), var(--green2))",
+                        borderRadius: "2px 2px 0 0",
+                        minHeight: displayTroops[i] > 0 ? "4px" : "0",
+                      }} />
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--green3)", fontFamily: "var(--vt)" }}>{displayTroops[i]}</div>
+                    <div style={{ fontSize: "0.6rem", color: "var(--text3)" }}>{name}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
