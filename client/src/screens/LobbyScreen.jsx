@@ -1,8 +1,19 @@
+import { useState } from "react";
+
 export default function LobbyScreen({ room, emit, myId, isHost }) {
+  const [copied, setCopied] = useState(false);
+
   if (!room) return null;
 
   const botTypes = ["RandomBot", "GreedyBot", "NashBot"];
   const botNames = { RandomBot: "🎲 RandomBot", GreedyBot: "💰 GreedyBot", NashBot: "🧮 NashBot" };
+
+  function copyCode() {
+    navigator.clipboard.writeText(room.code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   return (
     <div className="screen">
@@ -14,13 +25,31 @@ export default function LobbyScreen({ room, emit, myId, isHost }) {
           <div style={{ fontFamily: "var(--vt)", fontSize: "2.5rem", color: "var(--amber)" }}>
             🪖 WAR ROOM
           </div>
-          <div style={{ marginTop: "0.5rem" }}>
-            <span className="label">Room Code: </span>
-            <span style={{ fontFamily: "var(--vt)", fontSize: "2rem", color: "var(--green3)", letterSpacing: "0.3em" }}>
-              {room.code}
-            </span>
+
+          {/* Room code with copy button */}
+          <div style={{ marginTop: "0.75rem", marginBottom: "0.25rem" }}>
+            <div style={{ color: "var(--text3)", fontSize: "0.65rem", letterSpacing: "0.2em", marginBottom: "0.4rem" }}>
+              ROOM CODE — SHARE WITH FRIENDS
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem" }}>
+              <span style={{
+                fontFamily: "var(--vt)", fontSize: "2.8rem", color: "var(--green3)",
+                letterSpacing: "0.35em", padding: "0.2rem 0.75rem",
+                background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "2px"
+              }}>
+                {room.code}
+              </span>
+              <button
+                className={`btn ${copied ? "btn-primary" : "btn-ghost"}`}
+                style={{ fontSize: "0.75rem", padding: "0.4rem 0.75rem" }}
+                onClick={copyCode}
+              >
+                {copied ? "✓ COPIED" : "⧉ COPY"}
+              </button>
+            </div>
           </div>
-          <div style={{ color: "var(--text3)", fontSize: "0.75rem", marginTop: "0.25rem" }}>
+
+          <div style={{ color: "var(--text3)", fontSize: "0.75rem", marginTop: "0.5rem" }}>
             {room.totalRounds} rounds · {room.players.length} / 8 players
           </div>
         </div>
