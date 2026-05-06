@@ -21,7 +21,7 @@ The catch: there's no single dominant strategy. Stack all your troops on three f
 
 ## Features
 
-- 🌐 **Real-time multiplayer** via WebSockets — create a room, share the code, play instantly ( To be Implemeneted )
+- 🌐 **Real-time multiplayer** via WebSockets — create a room, share the code, play instantly
 - 🤖 **AI bots** with three distinct strategies:
   - 🎲 **RandomBot** — pure random distribution
   - 💰 **GreedyBot** — concentrates troops on the minimum fields needed to win
